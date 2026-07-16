@@ -1,14 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   User, 
-  Mail, 
   UploadCloud, 
   X, 
   CheckCircle2, 
   AlertCircle, 
   Sparkles,
   Sun,
-  Moon
+  Moon,
+  Search,
+  Phone,
+  Calendar,
+  Heart
 } from 'lucide-react';
 
 export default function App() {
@@ -22,19 +25,27 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Form Fields
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  // Stage state: 'verify' | 'profile' | 'submitting' | 'success' | 'error'
+  const [stage, setStage] = useState('verify');
+  const [statusMessage, setStatusMessage] = useState('');
+
+  // Verification Screen Input
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Fetched Trainee details
+  const [trainee, setTrainee] = useState({ id: '', name: '', phone: '' });
+
+  // Profile Form Fields
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [dob, setDob] = useState('');
+  const [dateOfJoin, setDateOfJoin] = useState('');
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
 
   // Validation Errors
   const [errors, setErrors] = useState({});
   const [isDraggedOver, setIsDraggedOver] = useState(false);
-
-  // Submission Status: 'idle' | 'submitting' | 'success' | 'error'
-  const [submissionStatus, setSubmissionStatus] = useState('idle');
-  const [statusMessage, setStatusMessage] = useState('');
 
   const fileInputRef = useRef(null);
 
@@ -47,40 +58,50 @@ export default function App() {
     };
   }, [photoPreview]);
 
-  // Real-time Name Validation
-  const validateName = (val) => {
-    if (!val.trim()) {
-      return 'Name is required.';
-    }
-    if (val.trim().length < 2) {
-      return 'Name must be at least 2 characters.';
-    }
-    return '';
+  // Determine the API URL dynamically at runtime
+  const getApiUrl = () => {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    return import.meta.env.VITE_API_URL || (isLocalhost ? 'http://localhost:8000' : '');
   };
 
-  // Real-time Email Validation
-  const validateEmail = (val) => {
-    if (!val.trim()) {
-      return 'Email is required.';
-    }
-    const regex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
-    if (!regex.test(val.trim())) {
-      return 'Please enter a valid email address.';
-    }
-    return '';
-  };
+  // Action 1: Handle Trainee Lookup Verification
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    const queryVal = searchQuery.trim();
 
-  // Field change handlers with inline validation updates
-  const handleNameChange = (e) => {
-    const val = e.target.value;
-    setName(val);
-    setErrors(prev => ({ ...prev, name: validateName(val) }));
-  };
+    if (!queryVal) {
+      setErrors({ search: 'Please enter your Registration ID or Phone Number.' });
+      return;
+    }
 
-  const handleEmailChange = (e) => {
-    const val = e.target.value;
-    setEmail(val);
-    setErrors(prev => ({ ...prev, email: validateEmail(val) }));
+    setIsVerifying(true);
+    setErrors({});
+
+    try {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/fetch?query=${encodeURIComponent(queryVal)}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.found) {
+          setTrainee({
+            id: data.id || '',
+            name: data.name || 'Trainee',
+            phone: data.phone || queryVal
+          });
+          setStage('profile');
+        } else {
+          setErrors({ search: 'Trainee profile not found. Please verify your credentials.' });
+        }
+      } else {
+        setErrors({ search: data.detail || 'An error occurred during lookup.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setErrors({ search: 'Unable to connect to the server. Please check your connection.' });
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   // Process selected file
@@ -107,7 +128,6 @@ export default function App() {
       return;
     }
 
-    // Clear file errors and set states
     setErrors(prev => {
       const copy = { ...prev };
       delete copy.photo;
@@ -116,7 +136,6 @@ export default function App() {
 
     setPhoto(file);
     
-    // Revoke old URL if it exists
     if (photoPreview) {
       URL.revokeObjectURL(photoPreview);
     }
@@ -166,42 +185,35 @@ export default function App() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Submit Handler
+  // Action 2: Submit Profile Completion
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Perform final validations
-    const nameErr = validateName(name);
-    const emailErr = validateEmail(email);
-    let photoErr = '';
+    // Validations
+    let errs = {};
+    if (!photo) errs.photo = 'Profile photo is required.';
+    if (!bloodGroup) errs.bloodGroup = 'Please select your blood group.';
+    if (!dob) errs.dob = 'Date of birth is required.';
+    if (!dateOfJoin) errs.dateOfJoin = 'Date of joining is required.';
 
-    if (!photo) {
-      photoErr = 'Profile photo is required.';
-    }
-
-    if (nameErr || emailErr || photoErr) {
-      setErrors({
-        name: nameErr,
-        email: emailErr,
-        photo: photoErr
-      });
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
       return;
     }
 
-    setSubmissionStatus('submitting');
+    setStage('submitting');
     setStatusMessage('');
 
-    // Prepare Multipart Form Data
+    // Prepare Form Data
     const formData = new FormData();
-    formData.append('name', name.trim());
-    formData.append('email', email.trim().toLowerCase());
+    formData.append('id', trainee.id);
+    formData.append('bloodGroup', bloodGroup);
+    formData.append('dob', dob);
+    formData.append('dateOfJoin', dateOfJoin);
     formData.append('photo', photo);
 
-    // Determine the API URL dynamically at runtime based on the browser address bar
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const apiUrl = import.meta.env.VITE_API_URL || (isLocalhost ? 'http://localhost:8000' : '');
-
     try {
+      const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/submit`, {
         method: 'POST',
         body: formData,
@@ -210,27 +222,30 @@ export default function App() {
       const data = await response.json();
 
       if (response.ok) {
-        setSubmissionStatus('success');
-        setStatusMessage(data.message || 'Successfully registered!');
+        setStage('success');
+        setStatusMessage(data.message || 'Profile successfully updated!');
       } else {
-        setSubmissionStatus('error');
-        setStatusMessage(data.detail || 'An error occurred during registration.');
+        setStage('error');
+        setStatusMessage(data.detail || 'An error occurred while saving details.');
       }
     } catch (err) {
       console.error(err);
-      setSubmissionStatus('error');
+      setStage('error');
       setStatusMessage('Unable to connect to the server. Please check your network or server status.');
     }
   };
 
-  // Form Reset
+  // Reset Form
   const handleReset = () => {
-    setName('');
-    setEmail('');
+    setSearchQuery('');
+    setTrainee({ id: '', name: '', phone: '' });
+    setBloodGroup('');
+    setDob('');
+    setDateOfJoin('');
     setPhoto(null);
     setPhotoPreview(null);
     setErrors({});
-    setSubmissionStatus('idle');
+    setStage('verify');
     setStatusMessage('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -241,6 +256,7 @@ export default function App() {
     <main className="form-card">
       <div className="form-card::top-glow" />
 
+      {/* Theme Toggle Button */}
       <button 
         type="button" 
         className="theme-toggle-btn" 
@@ -250,7 +266,7 @@ export default function App() {
         {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
       </button>
 
-      {submissionStatus === 'success' ? (
+      {stage === 'success' ? (
         <div className="status-content">
           <div className="status-icon-wrapper success">
             <CheckCircle2 size={40} />
@@ -258,79 +274,95 @@ export default function App() {
           <h2 className="status-title">Done!</h2>
           <p className="status-message">{statusMessage}</p>
           <button className="btn-reset" onClick={handleReset}>
-            Register Another User
+            Complete Another Profile
           </button>
         </div>
-      ) : submissionStatus === 'error' ? (
+      ) : stage === 'error' ? (
         <div className="status-content">
           <div className="status-icon-wrapper error">
             <AlertCircle size={40} />
           </div>
-          <h2 className="status-title">Registration Failed</h2>
+          <h2 className="status-title">Submission Failed</h2>
           <p className="status-message">{statusMessage}</p>
           <button className="btn-reset" onClick={handleReset}>
             Try Again
           </button>
         </div>
+      ) : stage === 'verify' ? (
+        <>
+          <div className="form-header">
+            <div className="form-logo">
+              <Sparkles size={28} />
+            </div>
+            <h1 className="form-title">Trainee Verification</h1>
+            <p className="form-subtitle">Enter your Registration ID or Phone Number to verify your profile</p>
+          </div>
+
+          <form onSubmit={handleVerify} noValidate>
+            <div className="form-group">
+              <label htmlFor="search-input" className="form-label">
+                Registration ID / Phone Number
+              </label>
+              <div className="form-input-container">
+                <input
+                  id="search-input"
+                  type="text"
+                  className={`form-input ${errors.search ? 'error' : ''}`}
+                  placeholder="Enter ID or Phone Number"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setErrors(prev => ({ ...prev, search: '' }));
+                  }}
+                  disabled={isVerifying}
+                />
+                <Search size={18} className="form-input-icon" />
+              </div>
+              {errors.search && (
+                <span className="error-message" id="search-error">
+                  <AlertCircle size={14} /> {errors.search}
+                </span>
+              )}
+            </div>
+
+            <button 
+              type="submit" 
+              className="btn-submit" 
+              disabled={isVerifying || !searchQuery.trim()}
+            >
+              {isVerifying ? (
+                <>
+                  <span className="spinner"></span>
+                  Verifying...
+                </>
+              ) : (
+                'Verify Profile'
+              )}
+            </button>
+          </form>
+        </>
       ) : (
         <>
           <div className="form-header">
             <div className="form-logo">
               <Sparkles size={28} />
             </div>
-            <h1 className="form-title">User Registration</h1>
-            <p className="form-subtitle">Create a public profile instantly with secure upload</p>
+            <h1 className="form-title">Complete Profile</h1>
+            <p className="form-subtitle">Welcome back, <span className="highlight-name">{trainee.name}</span>! Please complete your details.</p>
+          </div>
+
+          <div className="trainee-info-banner">
+            <div className="info-item">
+              <User size={16} />
+              <span><strong>Name:</strong> {trainee.name}</span>
+            </div>
+            <div className="info-item">
+              <Phone size={16} />
+              <span><strong>Phone:</strong> {trainee.phone}</span>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} noValidate>
-            {/* Name Field */}
-            <div className="form-group">
-              <label htmlFor="name-input" className="form-label">
-                Full Name
-              </label>
-              <div className="form-input-container">
-                <input
-                  id="name-input"
-                  type="text"
-                  className={`form-input ${errors.name ? 'error' : name && !errors.name ? 'success' : ''}`}
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={handleNameChange}
-                  disabled={submissionStatus === 'submitting'}
-                />
-                <User size={18} className="form-input-icon" />
-              </div>
-              {errors.name && (
-                <span className="error-message" id="name-error">
-                  <AlertCircle size={14} /> {errors.name}
-                </span>
-              )}
-            </div>
-
-            {/* Email Field */}
-            <div className="form-group">
-              <label htmlFor="email-input" className="form-label">
-                Email Address
-              </label>
-              <div className="form-input-container">
-                <input
-                  id="email-input"
-                  type="email"
-                  className={`form-input ${errors.email ? 'error' : email && !errors.email ? 'success' : ''}`}
-                  placeholder="john@example.com"
-                  value={email}
-                  onChange={handleEmailChange}
-                  disabled={submissionStatus === 'submitting'}
-                />
-                <Mail size={18} className="form-input-icon" />
-              </div>
-              {errors.email && (
-                <span className="error-message" id="email-error">
-                  <AlertCircle size={14} /> {errors.email}
-                </span>
-              )}
-            </div>
-
             {/* Photo Upload Field */}
             <div className="form-group">
               <label className="form-label">Profile Photo</label>
@@ -350,7 +382,7 @@ export default function App() {
                     style={{ display: 'none' }}
                     accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                     onChange={handleFileChange}
-                    disabled={submissionStatus === 'submitting'}
+                    disabled={stage === 'submitting'}
                   />
                   
                   <div className="dropzone-icon-container">
@@ -373,7 +405,7 @@ export default function App() {
                     className="btn-remove-photo" 
                     onClick={handleRemovePhoto}
                     title="Remove Photo"
-                    disabled={submissionStatus === 'submitting'}
+                    disabled={stage === 'submitting'}
                   >
                     <X size={16} />
                   </button>
@@ -387,19 +419,97 @@ export default function App() {
               )}
             </div>
 
+            {/* Blood Group Radio Buttons Grid */}
+            <div className="form-group">
+              <label className="form-label">Blood Group</label>
+              <div className="blood-group-grid">
+                {['O-', 'O+', 'A+', 'A-', 'B-', 'B+', 'AB-', 'AB+'].map((bg) => (
+                  <label key={bg} className={`blood-group-card ${bloodGroup === bg ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="bloodGroup"
+                      value={bg}
+                      checked={bloodGroup === bg}
+                      onChange={(e) => {
+                        setBloodGroup(e.target.value);
+                        setErrors(prev => ({ ...prev, bloodGroup: '' }));
+                      }}
+                      className="sr-only"
+                    />
+                    <Heart size={13} className="blood-icon" />
+                    <span>{bg}</span>
+                  </label>
+                ))}
+              </div>
+              {errors.bloodGroup && (
+                <span className="error-message">
+                  <AlertCircle size={14} /> {errors.bloodGroup}
+                </span>
+              )}
+            </div>
+
+            {/* Dates Row */}
+            <div className="form-row">
+              <div className="form-group half-width">
+                <label htmlFor="dob-input" className="form-label">Date of Birth</label>
+                <div className="form-input-container">
+                  <input
+                    id="dob-input"
+                    type="date"
+                    className={`form-input ${errors.dob ? 'error' : ''}`}
+                    value={dob}
+                    onChange={(e) => {
+                      setDob(e.target.value);
+                      setErrors(prev => ({ ...prev, dob: '' }));
+                    }}
+                    disabled={stage === 'submitting'}
+                  />
+                  <Calendar size={18} className="form-input-icon" />
+                </div>
+                {errors.dob && (
+                  <span className="error-message">
+                    <AlertCircle size={14} /> {errors.dob}
+                  </span>
+                )}
+              </div>
+
+              <div className="form-group half-width">
+                <label htmlFor="doj-input" className="form-label">Date of Joining</label>
+                <div className="form-input-container">
+                  <input
+                    id="doj-input"
+                    type="date"
+                    className={`form-input ${errors.dateOfJoin ? 'error' : ''}`}
+                    value={dateOfJoin}
+                    onChange={(e) => {
+                      setDateOfJoin(e.target.value);
+                      setErrors(prev => ({ ...prev, dateOfJoin: '' }));
+                    }}
+                    disabled={stage === 'submitting'}
+                  />
+                  <Calendar size={18} className="form-input-icon" />
+                </div>
+                {errors.dateOfJoin && (
+                  <span className="error-message">
+                    <AlertCircle size={14} /> {errors.dateOfJoin}
+                  </span>
+                )}
+              </div>
+            </div>
+
             {/* Submit Button */}
             <button 
               type="submit" 
               className="btn-submit" 
-              disabled={submissionStatus === 'submitting'}
+              disabled={stage === 'submitting'}
             >
-              {submissionStatus === 'submitting' ? (
+              {stage === 'submitting' ? (
                 <>
                   <span className="spinner"></span>
-                  Registering...
+                  Saving Profile...
                 </>
               ) : (
-                'Register Now'
+                'Submit Profile'
               )}
             </button>
           </form>

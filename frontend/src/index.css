@@ -598,3 +598,164 @@ body::after {
   background: rgba(255, 255, 255, 0.8);
 }
 
+/* Visually Hidden element (for screenreaders / custom inputs) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Trainee Info Display Banner */
+.trainee-info-banner {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-item svg {
+  color: var(--color-accent);
+}
+
+.highlight-name {
+  color: var(--color-accent);
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(var(--color-accent-rgb), 0.25);
+}
+
+/* Blood Group Selection Grid */
+.blood-group-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 480px) {
+  .blood-group-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.blood-group-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.8rem 0.5rem;
+  border-radius: 12px;
+  background: rgba(10, 11, 16, 0.25);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.blood-group-card:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.02);
+  transform: translateY(-1px);
+}
+
+.blood-group-card.active {
+  background: var(--grad-brand-glow);
+  border-color: var(--color-primary);
+  color: var(--text-primary);
+  box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.15);
+}
+
+.blood-group-card .blood-icon {
+  color: var(--text-muted);
+  transition: all 0.25s ease;
+}
+
+.blood-group-card:hover .blood-icon {
+  color: var(--color-error);
+}
+
+.blood-group-card.active .blood-icon {
+  color: var(--color-error);
+  fill: var(--color-error);
+  filter: drop-shadow(0 0 4px rgba(244, 63, 148, 0.4));
+}
+
+/* Double column date selector rows */
+.form-row {
+  display: flex;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.half-width {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 500px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+/* Calendar Inputs picker overlay (makes clicking anywhere inside date input open the calendar) */
+input[type="date"] {
+  position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  background: transparent;
+  bottom: 0;
+  color: transparent;
+  cursor: pointer;
+  height: auto;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+}
+
+/* Light Theme Variables Adaptations */
+:root[data-theme="light"] .trainee-info-banner {
+  background: rgba(15, 23, 42, 0.02);
+}
+
+:root[data-theme="light"] .blood-group-card {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+:root[data-theme="light"] .blood-group-card:hover {
+  background: #ffffff;
+  border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+:root[data-theme="light"] .blood-group-card.active {
+  background: var(--grad-brand-glow);
+  border-color: var(--color-primary);
+}
+
+

@@ -41,6 +41,12 @@ ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/jpg", "image/png"}
 # Email validation regex
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
+# Allowed blood groups
+ALLOWED_BLOOD_GROUPS = {"O-", "O+", "A+", "A-", "B-", "B+", "AB-", "AB+"}
+
+# Date structure validation (YYYY-MM-DD)
+DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
 @app.get("/health", status_code=status.HTTP_200_OK)
 def health_check():
     return {
@@ -48,26 +54,101 @@ def health_check():
         "power_automate_configured": POWER_AUTOMATE_URL is not None and len(POWER_AUTOMATE_URL) > 0
     }
 
-@app.post("/submit", status_code=status.HTTP_201_CREATED)
+@app.get("/fetch", status_code=status.HTTP_200_OK)
+async def fetch_trainee(query: str):
+    query = query.strip()
+    if not query:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification ID or Phone Number cannot be empty."
+        )
+
+    if not POWER_AUTOMATE_URL:
+        logger.error("POWER_AUTOMATE_URL environment variable is not configured.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Backend service configuration error (Power Automate endpoint missing)."
+        )
+
+    payload = {
+        "action": "fetch",
+        "query": query
+    }
+
+    logger.info(f"Querying Power Automate for trainee look-up: '{query}'...")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                POWER_AUTOMATE_URL,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30.0
+            )
+            
+            if response.status_code not in (200, 201, 202):
+                logger.error(
+                    f"Power Automate returned an error: Code {response.status_code}, Body: {response.text}"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_520_WEBSERVER_ERR,
+                    detail="Failed to fetch trainee details. The look-up service returned an error."
+                )
+                
+            data = response.json()
+            return data
+            
+    except httpx.RequestError as exc:
+        logger.error(f"HTTP request to Power Automate failed: {str(exc)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to reach the registration storage service. Please try again later."
+        )
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        logger.error(f"Unexpected error when querying Power Automate: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while looking up trainee."
+        )
+
+@app.post("/submit", status_code=status.HTTP_200_OK)
 async def submit_registration(
-    name: str = Form(..., min_length=2, max_length=100, description="User's full name"),
-    email: str = Form(..., description="User's email address"),
+    id: str = Form(..., description="SharePoint list item ID of the trainee"),
+    bloodGroup: str = Form(..., description="Trainee blood group"),
+    dob: str = Form(..., description="Trainee date of birth (YYYY-MM-DD)"),
+    dateOfJoin: str = Form(..., description="Trainee date of joining (YYYY-MM-DD)"),
     photo: UploadFile = File(..., description="User's profile photo (JPEG/PNG, max 5MB)")
 ):
     # 1. Validation
-    name = name.strip()
-    email = email.strip().lower()
+    id = id.strip()
+    bloodGroup = bloodGroup.strip().upper().replace("=", "+")
+    dob = dob.strip()
+    dateOfJoin = dateOfJoin.strip()
 
-    if not name:
+    if not id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Name cannot be empty or whitespace."
+            detail="Trainee ID is required."
         )
 
-    if not EMAIL_REGEX.match(email):
+    if bloodGroup not in ALLOWED_BLOOD_GROUPS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid email address format."
+            detail=f"Invalid blood group: {bloodGroup}. Must be one of {', '.join(sorted(ALLOWED_BLOOD_GROUPS))}"
+        )
+
+    if not DATE_REGEX.match(dob):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Date of Birth must be in YYYY-MM-DD format."
+        )
+
+    if not DATE_REGEX.match(dateOfJoin):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Date of Joining must be in YYYY-MM-DD format."
         )
 
     # Validate image content type
@@ -124,12 +205,15 @@ async def submit_registration(
 
     # 2. Forward to Power Automate
     payload = {
-        "Name": name,
-        "Email": email,
-        "Photo": photo_data_uri
+        "action": "submit",
+        "id": id,
+        "bloodGroup": bloodGroup,
+        "dob": dob,
+        "dateOfJoin": dateOfJoin,
+        "photo": photo_data_uri
     }
 
-    logger.info(f"Forwarding registration for '{name}' <{email}> to Power Automate...")
+    logger.info(f"Forwarding profile completion for Trainee ID '{id}' to Power Automate...")
 
     try:
         async with httpx.AsyncClient() as client:
@@ -146,15 +230,15 @@ async def submit_registration(
                 )
                 raise HTTPException(
                     status_code=status.HTTP_520_WEBSERVER_ERR,
-                    detail="Failed to register. The registration storage service returned an error."
+                    detail="Failed to save profile. The registration storage service returned an error."
                 )
                 
-            logger.info(f"Successfully registered user: {email}")
+            logger.info(f"Successfully updated trainee ID: {id}")
             return {
-                "message": "Registration successful!",
+                "message": "Profile completed successfully!",
                 "user": {
-                    "name": name,
-                    "email": email
+                    "id": id,
+                    "bloodGroup": bloodGroup
                 }
             }
             
