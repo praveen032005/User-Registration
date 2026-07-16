@@ -91,7 +91,7 @@ async def fetch_trainee(query: str):
                     f"Power Automate returned an error: Code {response.status_code}, Body: {response.text}"
                 )
                 raise HTTPException(
-                    status_code=status.HTTP_520_WEBSERVER_ERR,
+                    status_code=520,
                     detail="Failed to fetch trainee details. The look-up service returned an error."
                 )
                 
@@ -229,7 +229,7 @@ async def submit_registration(
                     f"Power Automate returned an error: Code {response.status_code}, Body: {response.text}"
                 )
                 raise HTTPException(
-                    status_code=status.HTTP_520_WEBSERVER_ERR,
+                    status_code=520,
                     detail="Failed to save profile. The registration storage service returned an error."
                 )
                 
