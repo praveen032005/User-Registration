@@ -1,0 +1,8 @@
+services:
+  # Unified Web Service (FastAPI + React Frontend) using Docker
+  - type: web
+    name: user-registration-portal
+    runtime: docker
+    envVars:
+      - key: POWER_AUTOMATE_URL
+        sync: false # Set this to your Power Automate HTTP trigger URL in Render dashboard
