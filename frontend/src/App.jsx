@@ -51,7 +51,7 @@ export default function App() {
     if (!val.trim()) {
       return 'Email is required.';
     }
-    const regex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$";
+    const regex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
     if (!regex.test(val.trim())) {
       return 'Please enter a valid email address.';
     }
