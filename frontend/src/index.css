@@ -516,3 +516,85 @@ body::after {
     font-size: 1.75rem;
   }
 }
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-toggle-btn:hover {
+  transform: scale(1.1) rotate(15deg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 4px 20px rgba(var(--color-primary-rgb), 0.2);
+}
+
+/* Light Theme Variables & Overrides */
+:root[data-theme="light"] {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  
+  --grad-brand-glow: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%);
+  
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-border-focus: rgba(79, 70, 229, 0.4);
+}
+
+/* Light theme overrides */
+:root[data-theme="light"] body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+:root[data-theme="light"] body::before,
+:root[data-theme="light"] body::after {
+  opacity: 0.2;
+}
+
+:root[data-theme="light"] .form-title {
+  background: linear-gradient(to right, #0f172a, #334155);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:root[data-theme="light"] .form-input {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--text-primary);
+}
+
+:root[data-theme="light"] .form-input:focus {
+  background: #ffffff;
+}
+
+:root[data-theme="light"] .dropzone {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+:root[data-theme="light"] .dropzone:hover,
+:root[data-theme="light"] .dropzone.active {
+  background: rgba(79, 70, 229, 0.03);
+}
+
+:root[data-theme="light"] .preview-container {
+  background: rgba(255, 255, 255, 0.8);
+}
+

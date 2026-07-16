@@ -6,10 +6,22 @@ import {
   X, 
   CheckCircle2, 
   AlertCircle, 
-  Sparkles 
+  Sparkles,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function App() {
+  // Theme state
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
   // Form Fields
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -228,6 +240,15 @@ export default function App() {
   return (
     <main className="form-card">
       <div className="form-card::top-glow" />
+
+      <button 
+        type="button" 
+        className="theme-toggle-btn" 
+        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+        aria-label="Toggle Theme"
+      >
+        {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+      </button>
 
       {submissionStatus === 'success' ? (
         <div className="status-content">
