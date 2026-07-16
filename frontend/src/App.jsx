@@ -34,7 +34,7 @@ export default function App() {
   const [isVerifying, setIsVerifying] = useState(false);
 
   // Fetched Trainee details
-  const [trainee, setTrainee] = useState({ id: '', name: '', phone: '' });
+  const [trainee, setTrainee] = useState({ id: '', name: '', phone: '', registrationId: '' });
 
   // Profile Form Fields
   const [bloodGroup, setBloodGroup] = useState('');
@@ -87,7 +87,8 @@ export default function App() {
           setTrainee({
             id: data.id || '',
             name: data.name || 'Trainee',
-            phone: data.phone || queryVal
+            phone: data.phone || queryVal,
+            registrationId: data.registrationId || queryVal
           });
           setStage('profile');
         } else {
@@ -359,6 +360,10 @@ export default function App() {
             <div className="info-item">
               <Phone size={16} />
               <span><strong>Phone:</strong> {trainee.phone}</span>
+            </div>
+            <div className="info-item">
+              <Sparkles size={16} />
+              <span><strong>Reg ID:</strong> {trainee.registrationId}</span>
             </div>
           </div>
 
