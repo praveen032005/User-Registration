@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("registration-backend")
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # Load environment variables
 load_dotenv()
@@ -83,7 +84,8 @@ async def fetch_trainee(query: str):
                 POWER_AUTOMATE_URL,
                 json=payload,
                 headers={"Content-Type": "application/json"},
-                timeout=30.0
+                timeout=30.0,
+                follow_redirects=False
             )
             
             if response.status_code not in (200, 201, 202):
@@ -184,6 +186,29 @@ async def submit_registration(
             detail="Error processing the uploaded image file."
         )
 
+    # Compress and resize photo if it's an image
+    if content_type.startswith("image/"):
+        try:
+            from PIL import Image
+            import io
+            
+            img = Image.open(io.BytesIO(photo_bytes))
+            # Convert RGBA/P to RGB for JPEG compatibility
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+                
+            # Resize if dimensions are larger than 1024px
+            img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+            
+            # Save compressed image back to bytes
+            compressed_io = io.BytesIO()
+            img.save(compressed_io, format="JPEG", quality=75, optimize=True)
+            photo_bytes = compressed_io.getvalue()
+            content_type = "image/jpeg"
+            logger.info(f"Compressed trainee photo to JPEG (size: {len(photo_bytes)} bytes)")
+        except Exception as img_err:
+            logger.warning(f"Could not compress image, using original: {str(img_err)}")
+
     # Convert photo to Base64 data URI
     try:
         base64_encoded = base64.b64encode(photo_bytes).decode("utf-8")
@@ -221,7 +246,8 @@ async def submit_registration(
                 POWER_AUTOMATE_URL,
                 json=payload,
                 headers={"Content-Type": "application/json"},
-                timeout=30.0
+                timeout=30.0,
+                follow_redirects=False
             )
             
             if response.status_code not in (200, 201, 202):
