@@ -11,7 +11,10 @@ import {
   Search,
   Phone,
   Calendar,
-  Heart
+  Heart,
+  BookOpen,
+  Hash,
+  ChevronDown
 } from 'lucide-react';
 
 export default function App() {
@@ -293,9 +296,9 @@ export default function App() {
         <>
           <div className="form-header">
             <div className="form-logo">
-              <Sparkles size={28} />
+              <BookOpen size={28} />
             </div>
-            <h1 className="form-title">Trainee Verification</h1>
+            <h1 className="form-title">Adani Skills and Education</h1>
             <p className="form-subtitle">Enter your Registration ID or Phone Number to verify your profile</p>
           </div>
 
@@ -346,24 +349,18 @@ export default function App() {
         <>
           <div className="form-header">
             <div className="form-logo">
-              <Sparkles size={28} />
+              <BookOpen size={28} />
             </div>
-            <h1 className="form-title">Complete Profile</h1>
-            <p className="form-subtitle">Welcome back, <span className="highlight-name">{trainee.name}</span>! Please complete your details.</p>
-          </div>
-
-          <div className="trainee-info-banner">
-            <div className="info-item">
-              <User size={16} />
-              <span><strong>Name:</strong> {trainee.name}</span>
-            </div>
-            <div className="info-item">
-              <Phone size={16} />
-              <span><strong>Phone:</strong> {trainee.phone}</span>
-            </div>
-            <div className="info-item">
-              <Sparkles size={16} />
-              <span><strong>Reg ID:</strong> {trainee.registrationId}</span>
+            <h1 className="form-title">Adani Skills and Education</h1>
+            <div className="retrieved-info-bar">
+              <span className="info-pill name-pill">
+                <User size={14} />
+                <strong>Name:</strong> {trainee.name}
+              </span>
+              <span className="info-pill id-pill">
+                <Hash size={14} />
+                <strong>Reg ID:</strong> {trainee.registrationId}
+              </span>
             </div>
           </div>
 
@@ -424,27 +421,26 @@ export default function App() {
               )}
             </div>
 
-            {/* Blood Group Radio Buttons Grid */}
+            {/* Blood Group Selection Dropdown */}
             <div className="form-group">
-              <label className="form-label">Blood Group</label>
-              <div className="blood-group-grid">
-                {['O-', 'O+', 'A+', 'A-', 'B-', 'B+', 'AB-', 'AB+'].map((bg) => (
-                  <label key={bg} className={`blood-group-card ${bloodGroup === bg ? 'active' : ''}`}>
-                    <input
-                      type="radio"
-                      name="bloodGroup"
-                      value={bg}
-                      checked={bloodGroup === bg}
-                      onChange={(e) => {
-                        setBloodGroup(e.target.value);
-                        setErrors(prev => ({ ...prev, bloodGroup: '' }));
-                      }}
-                      className="sr-only"
-                    />
-                    <Heart size={13} className="blood-icon" />
-                    <span>{bg}</span>
-                  </label>
-                ))}
+              <label htmlFor="blood-group-select" className="form-label">Blood Group</label>
+              <div className="select-container">
+                <select
+                  id="blood-group-select"
+                  className={`form-select ${errors.bloodGroup ? 'error' : ''}`}
+                  value={bloodGroup}
+                  onChange={(e) => {
+                    setBloodGroup(e.target.value);
+                    setErrors(prev => ({ ...prev, bloodGroup: '' }));
+                  }}
+                  disabled={stage === 'submitting'}
+                >
+                  <option value="">Select Blood Group</option>
+                  {['O-', 'O+', 'A+', 'A-', 'B-', 'B+', 'AB-', 'AB+'].map((bg) => (
+                    <option key={bg} value={bg}>{bg}</option>
+                  ))}
+                </select>
+                <ChevronDown className="select-arrow" size={18} />
               </div>
               {errors.bloodGroup && (
                 <span className="error-message">

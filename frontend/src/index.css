@@ -758,4 +758,114 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-color: var(--color-primary);
 }
 
+/* Professional Select Styles */
+.select-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.form-select {
+  width: 100%;
+  padding: 0.95rem 2.5rem 0.95rem 1rem;
+  background: rgba(10, 11, 16, 0.4);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 0.95rem;
+  font-weight: 400;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.form-select option {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.5rem;
+}
+
+.form-select:focus {
+  outline: none;
+  background: rgba(10, 11, 16, 0.7);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.15);
+}
+
+.form-select.error {
+  border-color: var(--color-error);
+}
+
+.form-select.error:focus {
+  box-shadow: 0 0 0 4px rgba(var(--color-error-rgb), 0.15);
+}
+
+.select-arrow {
+  position: absolute;
+  right: 1rem;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color 0.3s ease;
+}
+
+.form-select:focus ~ .select-arrow {
+  color: var(--color-primary);
+}
+
+:root[data-theme="light"] .form-select {
+  background: rgba(255, 255, 255, 0.8);
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .form-select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+/* Retrieved Info Pille Header Bar */
+.retrieved-info-bar {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.info-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.info-pill svg {
+  color: var(--color-accent);
+}
+
+.name-pill {
+  background: rgba(var(--color-accent-rgb), 0.05);
+  border-color: rgba(var(--color-accent-rgb), 0.15);
+}
+
+.id-pill {
+  background: rgba(var(--color-primary-rgb), 0.05);
+  border-color: rgba(var(--color-primary-rgb), 0.15);
+}
+
+:root[data-theme="light"] .info-pill {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+
 
